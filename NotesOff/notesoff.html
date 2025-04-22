@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NotesOff - Notes App</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font Awesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <!-- React & ReactDOM CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+
+    <!-- Babel CDN (for in-browser JSX transformation) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* Base styles */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f9ff;
+            background-image: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #bae6fd 100%);
+            overflow-x: hidden;
+            position: relative;
+            min-height: 100vh;
+        }
+
+        /* Wavy Background */
+        .wave-container { position: fixed; bottom: 0; left: 0; width: 100%; height: 150px; z-index: -1; overflow: hidden; pointer-events: none; }
+        .wave { position: absolute; bottom: 0; left: 0; width: 200%; height: 100%; background-repeat: repeat-x; background-position: 0 bottom; animation: wave-flow 20s linear infinite; opacity: 0.4; }
+        .wave.wave1 { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%2338bdf8' fill-opacity='0.5' d='M0,192L48,176C96,160,192,128,288,133.3C384,139,480,181,576,208C672,235,768,245,864,224C960,203,1056,149,1152,117.3C1248,85,1344,75,1392,69.3L1440,64L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E"); animation-duration: 15s; opacity: 0.3; }
+        .wave.wave2 { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%237dd3fc' fill-opacity='0.6' d='M0,256L40,229.3C80,203,160,149,240,144C320,139,400,181,480,186.7C560,192,640,160,720,160C800,160,880,192,960,213.3C1040,235,1120,245,1200,229.3C1280,213,1360,171,1400,149.3L1440,128L1440,320L1400,320C1360,320,1280,320,1200,320C1120,320,1040,320,960,320C880,320,800,320,720,320C640,320,560,320,480,320C400,320,320,320,240,320C160,320,80,320,40,320L0,320Z'%3E%3C/path%3E%3C/svg%3E"); animation-duration: 25s; bottom: 5px; opacity: 0.4; }
+        @keyframes wave-flow { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+        /* App title */
+        .app-title { font-family: 'Fredoka One', cursive; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }
+
+        /* Note Card styles */
+        .note-card { transform-style: preserve-3d; transition: transform 0.3s ease-out, box-shadow 0.3s ease-out; border-width: 2px; border-style: solid; border-bottom-width: 6px; height: 250px; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; position: relative; z-index: 10; }
+        .note-card-content-wrapper { flex-grow: 1; overflow: hidden; position: relative; }
+        .note-card-content-wrapper::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 30px; background: linear-gradient(to bottom, transparent, var(--card-bg-color, white)); pointer-events: none; opacity: 0.8; }
+        .note-card-title { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        .note-card-text { overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 5; line-clamp: 5; max-height: calc(1.5em * 5); line-height: 1.5em; }
+        @keyframes wiggle { 0%{transform:rotate(0deg) scale(1)}25%{transform:rotate(-3deg) scale(1.03)}50%{transform:rotate(3deg) scale(1.04)}75%{transform:rotate(-2deg) scale(1.03)}100%{transform:rotate(0deg) scale(1.03)} }
+        .note-card:hover { box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.25); transform: translateY(-8px); animation: wiggle 0.4s ease-in-out forwards; z-index: 11; }
+        .note-card:not(:hover) { animation: none; }
+        @keyframes pop-in { 0%{transform:scale(.5) rotateZ(-15deg);opacity:0}80%{transform:scale(1.05) rotateZ(5deg);opacity:1}100%{transform:scale(1) rotateZ(0deg);opacity:1} }
+        .note-pop-in { animation: pop-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+
+        /* Modal styles */
+        @keyframes modal-fade-in { from{opacity:0;transform:translateY(-20px) scale(.95)}to{opacity:1;transform:translateY(0) scale(1)} }
+        @keyframes modal-fade-out { from{opacity:1;transform:translateY(0) scale(1)}to{opacity:0;transform:translateY(-20px) scale(.95)} }
+        .modal-enter { animation: modal-fade-in 0.3s ease-out forwards; }
+        .modal-leave { animation: modal-fade-out 0.3s ease-in forwards; }
+
+        /* Scrollbar styles */
+        ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-track { background: #e0f2fe; border-radius: 10px; } ::-webkit-scrollbar-thumb { background: #38bdf8; border-radius: 10px; } ::-webkit-scrollbar-thumb:hover { background: #0ea5e9; }
+
+        /* Color Picker styles */
+        .color-swatch { width: 36px; height: 36px; border-width: 3px; transition: all 0.15s ease-in-out; display: flex; align-items: center; justify-content: center; }
+        .color-swatch-selected { ring-width: 2px; ring-offset-width: 2px; transform: scale(1.1); }
+        .color-swatch i { transition: opacity 0.15s ease-in-out; }
+
+        /* --- Coconut Tree Style --- */
+        .coconut-tree {
+            position: fixed;
+            bottom: 0.3;
+            left: 0;
+            width: 580px; /* Adjusted width */
+            height: auto;
+            transform: translateX(-36%) translateY(-10px); /* Adjusted position */
+            z-index: 2;
+            pointer-events: none;
+            filter: drop-shadow(3px 3px 6px rgba(0,0,0,0.25));
+            transition: transform 0.3s ease-out;
+        }
+        @keyframes tree-appear {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(-35%); opacity: 1; } /* Match final transform */
+        }
+        
+
+        /* --- Flowing Clouds Styles --- */
+         .cloud-container {
+             position: fixed;
+             top: 0;
+             left: 0;
+             width: 100%;
+             height: 200px; /* Area at the top for clouds */
+             z-index: 0; /* Behind main content (5), above waves (-1), above tree (2) if needed */
+             pointer-events: none;
+             overflow: hidden;
+         }
+         .cloud {
+             position: absolute;
+             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 60'%3E%3Cpath fill='%23FFFFFF' fill-opacity='0.85' d='M83.7,26.2c-0.3-6.5-5.6-11.7-12.2-11.7c-2.4,0-4.6,0.7-6.5,1.9C60.1,7.1,50.9,0,40,0C27.5,0,17.3,8.6,15.3,20.4 C6.8,21.2,0,28.3,0,37.3c0,9.9,8,17.9,17.9,17.9h64.2c9.3,0,16.9-7.6,16.9-16.9C99,32.3,92.2,26.6,83.7,26.2z'/%3E%3C/svg%3E");
+             background-repeat: no-repeat;
+             background-size: contain;
+             width: 120px; /* Base width */
+             height: 72px; /* Base height */
+             animation: cloud-flow 25s linear infinite;
+             opacity: 0.8;
+             will-change: transform;
+         }
+         .cloud.x1 { left: -150px; top: 20px; transform: scale(0.7); animation-duration: 40s; animation-delay: -5s; }
+         .cloud.x2 { left: -200px; top: 50px; transform: scale(1); animation-duration: 60s; animation-delay: -12s; opacity: 0.9; }
+         .cloud.x3 { left: -250px; top: 10px; transform: scale(0.5); animation-duration: 36s; animation-delay: -2s; }
+         .cloud.x4 { left: -100px; top: 80px; transform: scale(0.8); animation-duration: 56s; animation-delay: -8s; opacity: 0.75; }
+         .cloud.x5 { left: -300px; top: 40px; transform: scale(1.1); animation-duration: 70s; animation-delay: -18s; }
+         @keyframes cloud-flow {
+             0% { transform: translateX(0) scale(var(--cloud-scale, 1)); }
+             100% { transform: translateX(calc(100vw + 300px)) scale(var(--cloud-scale, 1)); }
+         }
+
+        /* Main Content Area */
+        .main-content-area {
+            position: relative;
+            z-index: 5; /* Above clouds(0) and tree(2) */
+        }
+    </style>
+
+    <script>
+        // Tailwind Config
+        tailwind.config = {
+            content: ["./*.html"],
+            theme: {
+                extend: {
+                    fontFamily: { 'sans': ['Inter', 'sans-serif'], 'display': ['Fredoka One', 'cursive'], },
+                    boxShadow: { '3d-light': '0 5px 15px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.06)', '3d-heavy': '0 10px 25px rgba(0,0,0,0.2), 0 5px 10px rgba(0,0,0,0.1)', },
+                    zIndex: { '-1': '-1', '0': '0', '2': '2', '5': '5', '10': '10', '11': '11', '40': '40', '50': '50', '60': '60', }, // Added z-index 0
+                    animation: { 'pop-in': 'pop-in .5s cubic-bezier(.175,.885,.32,1.275) forwards', 'float': 'float 3s ease-in-out infinite', 'wiggle': 'wiggle .4s ease-in-out forwards', 'wave-flow': 'wave-flow 20s linear infinite', 'tree-appear': 'tree-appear 1s ease-out .5s forwards', 'cloud-flow': 'cloud-flow 25s linear infinite' }, // Added cloud-flow
+                    keyframes: {
+                        'pop-in': { '0%':{transform:'scale(.5) rotateZ(-15deg)',opacity:'0'}, '80%':{transform:'scale(1.05) rotateZ(5deg)',opacity:'1'}, '100%':{transform:'scale(1) rotateZ(0deg)',opacity:'1'} },
+                        'float': { '0%,100%':{transform:'translateY(0px)'}, '50%':{transform:'translateY(-10px)'} },
+                        'wiggle': { '0%':{transform:'rotate(0deg) scale(1)'}, '25%':{transform:'rotate(-3deg) scale(1.03)'}, '50%':{transform:'rotate(3deg) scale(1.04)'}, '75%':{transform:'rotate(-2deg) scale(1.03)'}, '100%':{transform:'rotate(0deg) scale(1.03)'} },
+                        'wave-flow': { '0%':{transform:'translateX(0)'}, '100%':{transform:'translateX(-50%)'} },
+                        'tree-appear': { from:{transform:'translateX(-100%)',opacity:'0'}, to:{transform:'translateX(-35%)',opacity:'1'} }, // Matches CSS
+                        'cloud-flow': { '0%':{transform:'translateX(0) scale(var(--cloud-scale, 1))'}, '100%':{transform:'translateX(calc(100vw + 300px)) scale(var(--cloud-scale, 1))'} } // Added cloud-flow keyframes
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body>
+    <!-- Waves -->
+    <div class="wave-container" aria-hidden="true"> <div class="wave wave1"></div> <div class="wave wave2"></div> </div>
+
+    <!-- React Root -->
+    <div id="root"></div>
+
+    <!-- React Code -->
+    <script type="text/babel">
+        const { useState, useEffect, useCallback, useMemo } = React;
+
+        // --- Constants ---
+        const NOTE_COLORS = [ { name: 'Yellow', bg: 'bg-yellow-200', border: 'border-yellow-400', text: 'text-yellow-800', hex: '#fef08a' }, { name: 'Pink', bg: 'bg-pink-200', border: 'border-pink-400', text: 'text-pink-800', hex: '#fbcfe8' }, { name: 'Blue', bg: 'bg-sky-200', border: 'border-sky-400', text: 'text-sky-800', hex: '#bae6fd' }, { name: 'Green', bg: 'bg-emerald-200', border: 'border-emerald-400', text: 'text-emerald-800', hex: '#a7f3d0' }, { name: 'Purple', bg: 'bg-purple-200', border: 'border-purple-400', text: 'text-purple-800', hex: '#e9d5ff' }, { name: 'Orange', bg: 'bg-orange-200', border: 'border-orange-400', text: 'text-orange-800', hex: '#fed7aa' }, { name: 'Gray', bg: 'bg-slate-200', border: 'border-slate-400', text: 'text-slate-800', hex: '#e2e8f0' }, ];
+        const DEFAULT_COLOR_NAME = NOTE_COLORS[0].name;
+        const LOCAL_STORAGE_KEY = 'notesOffAppNotesEnhanced';
+        // --- Helper Functions ---
+        function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
+        function findColorScheme(colorName) { return NOTE_COLORS.find(c => c.name === colorName) || NOTE_COLORS.find(c => c.name === DEFAULT_COLOR_NAME); }
+
+        // --- Components (NoteCard, NoteModal, NoteViewModal remain unchanged) ---
+        function NoteCard({ note, onEdit, onDelete, onView }) { const colorScheme = findColorScheme(note.color); const handleCardClick = (e) => { if (e.target.closest('button')) return; onView(note); }; return ( <div className={`note-card relative p-5 rounded-xl shadow-3d-light ${colorScheme.bg} ${colorScheme.border} ${colorScheme.text} border-opacity-80 note-pop-in`} style={{ '--card-bg-color': colorScheme.hex, borderColor: `var(--tw-${colorScheme.border}-color)` }} onClick={handleCardClick} > <div className="note-card-content-wrapper mb-4"> <h3 className="note-card-title text-xl font-semibold mb-2">{note.title || 'Untitled Note'}</h3> <p className="note-card-text text-sm whitespace-pre-wrap break-words">{note.content}</p> </div> <div className="mt-auto flex justify-between items-center pt-3 border-t border-current border-opacity-30"> <span className="text-xs opacity-70"> {new Date(note.timestamp).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })} </span> <div className="flex space-x-2"> <button onClick={(e) => { e.stopPropagation(); onEdit(note); }} className="p-2 rounded-full hover:bg-black hover:bg-opacity-10 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-current focus:ring-opacity-50" aria-label="Edit Note" > <i className="fas fa-pencil-alt text-sm"></i> </button> <button onClick={(e) => { e.stopPropagation(); onDelete(note.id); }} className="p-2 rounded-full hover:bg-red-500 hover:text-white transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-opacity-50" aria-label="Delete Note" > <i className="fas fa-trash-alt text-sm"></i> </button> </div> </div> </div> ); }
+        function NoteModal({ isOpen, onClose, onSave, noteToEdit }) { const [title, setTitle] = useState(''); const [content, setContent] = useState(''); const [color, setColor] = useState(DEFAULT_COLOR_NAME); const [isLeaving, setIsLeaving] = useState(false); useEffect(() => { if (noteToEdit) { setTitle(noteToEdit.title); setContent(noteToEdit.content); setColor(noteToEdit.color); } else { setTitle(''); setContent(''); setColor(DEFAULT_COLOR_NAME); } setIsLeaving(false); }, [noteToEdit, isOpen]); const handleSave = () => { const noteData = { id: noteToEdit ? noteToEdit.id : generateId(), title: title.trim() || 'Untitled Note', content: content.trim(), color: color, timestamp: noteToEdit ? noteToEdit.timestamp : Date.now() }; onSave(noteData); handleClose(); }; const handleClose = () => { setIsLeaving(true); setTimeout(() => { onClose(); }, 300); }; if (!isOpen && !isLeaving) return null; const selectedColorScheme = findColorScheme(color); return ( <div className={`fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-opacity duration-300 ${isOpen && !isLeaving ? 'opacity-100' : 'opacity-0'} ${isLeaving ? 'modal-leave' : 'modal-enter'}`} onClick={handleClose}> <div className={`relative rounded-2xl shadow-3d-heavy w-full max-w-lg p-6 md:p-8 transform transition-transform ${selectedColorScheme.bg} ${selectedColorScheme.text} ${isLeaving ? '' : ''}`} onClick={(e) => e.stopPropagation()} > <button onClick={handleClose} className={`absolute top-4 right-4 p-2 rounded-full ${selectedColorScheme.text} opacity-70 hover:opacity-100 hover:bg-black hover:bg-opacity-10 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-current`} aria-label="Close modal"> <i className="fas fa-times text-xl"></i> </button> <h2 className="text-2xl font-display mb-6">{noteToEdit ? 'Edit Note' : 'Create New Note'}</h2> <div className="space-y-5"> <input type="text" placeholder="Note Title (optional)" value={title} onChange={(e) => setTitle(e.target.value)} className={`w-full p-3 rounded-lg bg-white bg-opacity-70 focus:bg-opacity-90 border-2 ${selectedColorScheme.border} placeholder-${selectedColorScheme.text} placeholder-opacity-60 focus:outline-none focus:ring-2 focus:ring-${selectedColorScheme.border} transition`} /> <textarea placeholder="Type your note here..." value={content} onChange={(e) => setContent(e.target.value)} rows="6" className={`w-full p-3 rounded-lg bg-white bg-opacity-70 focus:bg-opacity-90 border-2 ${selectedColorScheme.border} placeholder-${selectedColorScheme.text} placeholder-opacity-60 focus:outline-none focus:ring-2 focus:ring-${selectedColorScheme.border} transition resize-none`} ></textarea> <div className="flex items-center flex-wrap gap-2"> <span className="font-medium mr-2 self-center">Color:</span> {NOTE_COLORS.map(c => ( <button key={c.name} onClick={() => setColor(c.name)} className={`color-swatch rounded-full ${c.bg} ${c.border} ${color === c.name ? `color-swatch-selected ring-offset-${selectedColorScheme.bg} ring-${c.border}` : ''} hover:scale-110`} aria-label={`Select ${c.name} color`} style={{ backgroundColor: `var(--tw-${c.bg}-color)`, borderColor: `var(--tw-${c.border}-color)` }} > <i className={`fas fa-check text-sm ${selectedColorScheme.text} ${color === c.name ? 'opacity-100' : 'opacity-0'}`}></i> </button> ))} </div> </div> <div className="mt-8 text-right"> <button onClick={handleSave} className={`px-6 py-3 rounded-lg ${selectedColorScheme.border} border-b-4 ${selectedColorScheme.bg} font-semibold shadow-md hover:shadow-lg hover:brightness-105 transform hover:-translate-y-1 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-${selectedColorScheme.border} focus:ring-offset-2 focus:ring-offset-${selectedColorScheme.bg}`}> <i className="fas fa-save mr-2"></i> Save Note </button> </div> </div> </div> ); }
+        function NoteViewModal({ isOpen, onClose, note }) { const [isLeaving, setIsLeaving] = useState(false); useEffect(() => { if (isOpen) setIsLeaving(false); }, [isOpen]); const handleClose = () => { setIsLeaving(true); setTimeout(() => { onClose(); }, 300); }; if (!isOpen && !isLeaving) return null; if (!note) return null; const colorScheme = findColorScheme(note.color); return ( <div className={`fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-40 p-4 transition-opacity duration-300 ${isOpen && !isLeaving ? 'opacity-100' : 'opacity-0'} ${isLeaving ? 'modal-leave' : 'modal-enter'}`} onClick={handleClose}> <div className={`relative rounded-2xl shadow-3d-heavy w-full max-w-xl p-6 md:p-8 transform transition-transform ${colorScheme.bg} ${colorScheme.text} ${isLeaving ? '' : ''} max-h-[80vh] overflow-y-auto`} onClick={(e) => e.stopPropagation()} > <button onClick={handleClose} className={`absolute top-4 right-4 p-2 rounded-full ${colorScheme.text} opacity-70 hover:opacity-100 hover:bg-black hover:bg-opacity-10 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-current`} aria-label="Close viewer"> <i className="fas fa-times text-xl"></i> </button> <h2 className="text-3xl font-display mb-4 break-words">{note.title || 'Untitled Note'}</h2> <p className="text-base whitespace-pre-wrap break-words mb-6">{note.content}</p> <div className="text-xs opacity-70 border-t border-current border-opacity-30 pt-3 mt-6"> Created on: {new Date(note.timestamp).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })} </div> </div> </div> ); }
+
+        // ** Main App Component **
+        function App() {
+            // State and Hooks (unchanged)
+            const [notes, setNotes] = useState([]); const [isEditModalOpen, setIsEditModalOpen] = useState(false); const [editingNote, setEditingNote] = useState(null); const [isViewModalOpen, setIsViewModalOpen] = useState(false); const [viewingNote, setViewingNote] = useState(null); const [searchTerm, setSearchTerm] = useState(''); const [isLoading, setIsLoading] = useState(true);
+
+            // Load/Save Effects (unchanged)
+            useEffect(() => { let initialNotes = []; try { const storedNotes = localStorage.getItem(LOCAL_STORAGE_KEY); if (storedNotes) { initialNotes = JSON.parse(storedNotes); } } catch (error) { console.error("Failed to parse notes:", error); } if (initialNotes.length === 0) { initialNotes = [ { id: generateId(), title: 'Welcome to NotesOff! ✨', content: 'This is your first note.\n\n- Click "+" to add more.\n- Click a card to view.\n- Click pencil to edit.\n- Enjoy the waves, clouds & palm tree!', color: NOTE_COLORS[2].name, timestamp: Date.now() } ]; } setNotes(initialNotes); setTimeout(() => setIsLoading(false), 300); }, []);
+            useEffect(() => { if (!isLoading) { localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(notes)); } }, [notes, isLoading]);
+
+            // Handlers (unchanged)
+            const handleAddNoteClick = () => { setEditingNote(null); setIsEditModalOpen(true); }; const handleEditNote = useCallback((note) => { setEditingNote(note); setIsEditModalOpen(true); }, []); const handleCloseEditModal = useCallback(() => { setIsEditModalOpen(false); setTimeout(() => setEditingNote(null), 300); }, []); const handleViewNote = useCallback((note) => { setViewingNote(note); setIsViewModalOpen(true); }, []); const handleCloseViewModal = useCallback(() => { setIsViewModalOpen(false); setTimeout(() => setViewingNote(null), 300); }, []); const handleDeleteNote = useCallback((id) => { if (window.confirm('Are you sure?')) { setNotes(prev => prev.filter(n => n.id !== id)); } }, []); const handleSaveNote = useCallback((noteData) => { setNotes(prev => { const index = prev.findIndex(n => n.id === noteData.id); if (index > -1) { const updated = [...prev]; updated[index] = { ...noteData, timestamp: prev[index].timestamp }; return updated; } else { return [{ ...noteData, timestamp: Date.now() }, ...prev]; } }); }, []);
+
+            // Filter Notes (unchanged)
+             const filteredNotes = useMemo(() => { if (!searchTerm) return notes; const lowerSearch = searchTerm.toLowerCase(); return notes.filter(n => n.title.toLowerCase().includes(lowerSearch) || n.content.toLowerCase().includes(lowerSearch)); }, [notes, searchTerm]);
+
+            return (
+                 // Main App container
+                 <div className="min-h-screen p-4 md:p-8 relative">
+
+                    {/* --- Flowing Clouds Container --- */}
+                    <div className="cloud-container" aria-hidden="true">
+                        <div className="cloud x1"></div>
+                        <div className="cloud x2"></div>
+                        <div className="cloud x3"></div>
+                        <div className="cloud x4"></div>
+                        <div className="cloud x5"></div>
+                    </div>
+
+                    {/* --- Coconut Tree Image --- */}
+                    <img
+                        src="./images/coconut_tree.png" // Make sure this path is correct for your setup
+                        alt="" // Decorative
+                        className="coconut-tree hidden md:block coconut-tree-animate"
+                        aria-hidden="true"
+                    />
+
+                    {/* Main Content Area (for stacking) */}
+                    <div className="main-content-area">
+                        {/* Header - Removed the old static cloud div */}
+                        <header className="text-center mb-8 md:mb-12 relative">
+                            <h1 className="app-title text-5xl md:text-7xl text-sky-600 font-display mb-2"> NotesOff <i className="fas fa-feather-alt text-yellow-400 text-4xl md:text-6xl transform -rotate-12 inline-block"></i> </h1>
+                            <p className="text-lg text-slate-600">Your Notes, Extra Dimensional!</p>
+                            <div className="absolute top-0 right-0 -mt-4 -mr-4 opacity-50 animate-float hidden lg:block"> <i className="fas fa-lightbulb text-6xl text-yellow-300 transform rotate-12"></i> </div>
+                             {/* The old cloud div that was here has been removed */}
+                        </header>
+
+                        {/* Search Bar */}
+                        <div className="mb-8 max-w-xl mx-auto">
+                            <div className="relative">
+                                <input type="text" placeholder="Search notes..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full px-5 py-3 pl-12 rounded-full shadow-inner bg-white bg-opacity-80 border-2 border-sky-300 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition" />
+                                <i className="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-sky-500 opacity-70"></i>
+                            </div>
+                        </div>
+
+                        {/* Notes Grid / Loading / Empty State */}
+                        <main className="container mx-auto max-w-7xl">
+                            {isLoading ? ( <div className="text-center py-20"> <i className="fas fa-spinner fa-spin text-4xl text-sky-500 mb-4"></i> <p className="text-slate-600">Loading notes...</p> </div>
+                            ) : filteredNotes.length > 0 ? (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8 perspective-[1000px]">
+                                    {filteredNotes.map(note => ( <NoteCard key={note.id} note={note} onEdit={handleEditNote} onDelete={handleDeleteNote} onView={handleViewNote} /> ))}
+                                </div>
+                             ) : (
+                                <div className="text-center py-20 px-6 rounded-xl bg-white bg-opacity-50 shadow-lg max-w-md mx-auto"> <i className="fas fa-box-open text-6xl text-sky-400 mb-6 opacity-70"></i> <h3 className="text-2xl font-semibold text-slate-700 mb-3">No Notes Found!</h3> <p className="text-slate-500 mb-6">{searchTerm ? "Try a different search!" : "Create your first note!"}</p> <button onClick={handleAddNoteClick} className="px-6 py-3 rounded-lg bg-yellow-400 text-yellow-900 border-b-4 border-yellow-600 font-semibold shadow-md hover:shadow-lg hover:brightness-105 transform hover:-translate-y-1 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2"> <i className="fas fa-plus mr-2"></i> Create Note </button> </div>
+                            )}
+                        </main>
+                    </div> {/* End Main Content Area */}
+
+                    {/* Add Note FAB */}
+                    <button onClick={handleAddNoteClick} className="fixed bottom-6 right-6 md:bottom-10 md:right-10 w-16 h-16 bg-gradient-to-br from-sky-500 to-blue-600 text-white rounded-full shadow-3d-heavy flex items-center justify-center transform hover:scale-110 hover:rotate-12 transition-all duration-300 ease-out focus:outline-none focus:ring-4 focus:ring-sky-300 z-[60]" aria-label="Add New Note">
+                        <i className="fas fa-plus text-2xl"></i>
+                    </button>
+
+                    {/* Modals */}
+                    <NoteModal isOpen={isEditModalOpen} onClose={handleCloseEditModal} onSave={handleSaveNote} noteToEdit={editingNote} />
+                    <NoteViewModal isOpen={isViewModalOpen} onClose={handleCloseViewModal} note={viewingNote} />
+                </div>
+            );
+        }
+
+        // Render the App
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+
+</body>
+</html>
